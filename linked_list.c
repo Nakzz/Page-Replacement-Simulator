@@ -1,0 +1,186 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Title:		Page Replacement Simulator
+// Filename:	linked_list.c
+//
+// Course:		cs537, Fall 2020
+// Authors:		Ajmain Naqib, Devanshu Mantri
+// NetID:		naqib, dmantri
+// CsLogin:		ajmain, devanshu
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "linked_list.h"
+
+listNode *initListNode(void *p)
+{
+    listNode *n = malloc(sizeof(listNode));
+    n->p = p;
+    n->next = NULL;
+    n->prev = NULL;
+    return n;
+}
+
+void freeListNode(listNode *n)
+{
+    if (n)
+        free(n);
+}
+
+void freeLinkedList(LinkedList *ll)
+{
+    if (ll)
+        free(ll);
+}
+
+LinkedList *initLinkedList()
+{
+    LinkedList *ll = malloc(sizeof(LinkedList));
+    ll->size = 0;
+    ll->head = NULL;
+    ll->tail = NULL;
+
+    return ll;
+}
+
+listNode *pushToHead(LinkedList *ll, listNode *n)
+{ //FIFO, LRU !TESTED!
+
+    if (ll->head == NULL)
+    {
+        ll->head = n; // set the only element as tail
+        ll->size = ll->size + 1;
+
+        ll->tail = n; // set the only element as tail
+    }
+    else
+    {
+        ll->head->prev = n; // add current heads prev
+        n->next = ll->head; // add new heads next
+        ll->head = n;       // set new head
+        ll->size = ll->size + 1;
+    }
+
+    return ll->head;
+}
+
+//NOTE: does not free node from memory
+listNode *popFromTail(LinkedList *ll)
+{ // FIFO LRU !TESTED!
+
+    listNode *pop;
+
+    if (ll->tail == NULL)
+        pop = NULL;
+    else
+    {
+        if (ll->head == ll->tail)
+        {
+            pop = ll->head;
+            ll->head = NULL;
+            ll->tail = NULL;
+            ll->size = ll->size - 1;
+        }
+        else
+        {
+            pop = ll->tail;
+            ll->tail->prev->next = NULL;
+            ll->size = ll->size - 1;
+
+            if (ll->size == 1)
+                ll->tail = ll->head;
+        }
+    }
+
+    return pop;
+}
+
+//NOTE: does not free node from memory
+listNode *removeNode(LinkedList *ll, listNode *n)
+{ //LRU !TESTED!
+
+    if (ll->head != NULL)
+    {
+        listNode *curr = ll->head;
+
+        while (curr != NULL)
+        {
+
+            if (curr == n)
+                break;
+
+            curr = curr->next;
+        }
+
+        if (curr == NULL) //if end of LL and still no match
+            return NULL;
+
+        if (curr == ll->head && curr == ll->tail)
+        {                           // only elem
+            return popFromTail(ll); //or popFromHead();
+        }
+        else if (curr == ll->head) //pop from head
+        {
+            return popFromHead(ll);
+        }
+        else if (curr == ll->tail) // pop from tail
+        {
+            return popFromTail(ll);
+        }
+        else
+        { // base case
+            curr->prev = curr->next;
+            ll->size = ll->size - 1;
+            return curr;
+        }
+    }
+
+    return NULL;
+}
+
+//NOTE: does not free node from memory
+listNode *popFromHead(LinkedList *ll)
+{ //REVIEW: DO test
+    listNode *pop;
+
+    if (ll->head == NULL)
+        pop = NULL;
+    else
+    {
+        if (ll->head == ll->tail)
+        {
+            pop = ll->head;
+            ll->head = NULL;
+            ll->tail = NULL;
+            ll->size = ll->size - 1;
+        }
+        else
+        {
+            pop = ll->head;
+            ll->head->prev->next = ll->head->next;
+            ll->size = ll->size - 1;
+        }
+    }
+
+    return pop;
+}
+
+listNode *pushToTail(LinkedList *ll, listNode *n){
+
+    if (ll->head == NULL)
+    {
+        ll->head = n; // set the only element as tail
+        ll->size = ll->size + 1;
+
+        ll->tail = n; // set the only element as tail
+    }
+    else
+    {
+        ll->tail->next = n; // add to current tail
+        ll->tail = n;       // set new tail
+        ll->size = ll->size + 1;
+    }
+
+    return ll->tail;
+}
