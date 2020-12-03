@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Title:		Page Replacement Simulator
-// Filename:	lru.c
+// Filename:	clock.c
 //
 // Course:		cs537, Fall 2020
 // Authors:		Ajmain Naqib, Devanshu Mantri
@@ -29,7 +29,6 @@ PageAlgoStruct *initPageAlgoStruct()
  * Page replacement algorithm 
  * 
  * */
-
 process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long memAddr, process *proc)
 {
     //if evict is true, then tail gets kicked out, return this tail
@@ -37,16 +36,18 @@ process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long me
     LinkedList *ll = p->datastructure;
     listNode *found = NULL;
     listNode *n = ll->head;
-
+    Page *page = NULL;
     //1: check if exists in Linked list
 
     while (n)
     {
-        Page *page = n->p;
+        page = n->p;
 
         if (page->memAddr == memAddr)
         {
+            //1: if does, change second_chance bit to 1
             found = n;
+            page->clock = 1;
             break;
         }
 
@@ -60,15 +61,30 @@ process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long me
         listNode *n = initListNode(page);
         found = pushToHead(ll, n);
     }
-    else
-    {
-        //1: if does, move to front
-        removeNode(ll, found);
-        pushToHead(ll, found);
-    }
 
     if (evict)
     {
+        //2: traverse from tail, change second_chance bit to 0 and remove first the non second_chance bit
+        n = ll->tail;
+        found = NULL;
+        while (n)
+        {
+            page = (Page *)n->p;
+            ;
+            if (page->clock == 1)
+                page->clock = 0;
+            else
+            {
+                found = n;
+                break;
+            }
+            n = n->prev;
+        }
+
+        //2: if none found, remove tail
+        if (found == NULL)
+        {
+        }
         found = popFromTail(ll);
     }
 

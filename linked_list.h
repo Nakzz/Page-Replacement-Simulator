@@ -38,9 +38,8 @@ void freeListNode(listNode *n);
 listNode *initListNode(void *p);
 listNode *pushToHead(LinkedList *ll, listNode *n);
 listNode *pushToTail(LinkedList *ll, listNode *n);
-listNode *popFromTail(LinkedList *ll);
-listNode *popFromHead(LinkedList *ll);
-
-listNode *removeNode(LinkedList *ll, listNode *n);
+void *popFromTail(LinkedList *ll);
+void *popFromHead(LinkedList *ll);
+void *removeNode(LinkedList *ll, listNode *n);
 
 #endif

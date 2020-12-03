@@ -38,15 +38,22 @@ clean:
 new: clean
 	$(MAKE)
 
-# test:
-	# @printf "\n\n Test \n"
-	# @./537make -f ./proj3_test/modification_check/makefile
-	# @printf "\n\n Test Done"
+537pfsim-fifo: $(OBJECTS) fifo.o
+	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} fifo.o -lm
+537pfsim-lru: $(OBJECTS) lru.o
+	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} lru.o -lm
+537pfsim-clock: $(OBJECTS) clock.o
+	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} clock.o -lm
 
-	# @printf "\n\n Test \n"
-	# @./537make -f /home/aj/classes/537/537make/proj3_test/simple_testcase/makefile
-	# @printf "\n\n Test Done"
+test:
+	@printf "\n\n Test \n"
+	@./537pfsim-fifo ./trace_files/12million.addrtrace  
+	@printf "\n\n Test Done"
 
-	# @printf "\n\n Test \n"
-	# @./537make -f /home/aj/classes/537/537make/proj3_test/null_character/makefile
-	# @printf "\n\n Test Done"
+	@printf "\n\n Test \n"
+	@./537make -f /home/aj/classes/537/537make/proj3_test/simple_testcase/makefile
+	@printf "\n\n Test Done"
+
+	@printf "\n\n Test \n"
+	@./537make -f /home/aj/classes/537/537make/proj3_test/null_character/makefile
+	@printf "\n\n Test Done"

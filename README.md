@@ -22,20 +22,20 @@ which indicates that process 1234 referenced page 10000.
 [] pass 1: find all PID, first mem ref and last mem ref
 [] pass 2:
 [] disk_queue for disk I/O
-[] page_algorithm
-[] FIFO
-[] LRU
-[] CLOCK
-[] process
+[x] page_algorithm
+[x] FIFO
+[x] LRU
+[x] CLOCK
+[x] process
 [] page_tables
 [] page_frame_table
 [] Build test suite
-[] bad trace file
-[] null char
-[] improper format
-[] white space
-[] read largest long unsigned(64 bit=> 18,446,744,073,709,551,615 , 32 bit=> 4,294,967,295) +1  
- [] can be buffer overflow? if so, throw error
+[x] bad trace file
+[x] null char
+[x] improper format
+[x] white space
+[x] read largest long unsigned(64 bit=> 18,446,744,073,709,551,615 , 32 bit=> 4,294,967,295) +1  
+ [x] can be buffer overflow? if so, throw error
 [] run each trace_files with 6 times - page sizes of 512 and 4096 bytes - physical memory sizes of 1 MB, 4MB, and 32 MB.
 [] Grade Check
 [] valgrind: memory leaks
@@ -52,3 +52,5 @@ which indicates that process 1234 referenced page 10000.
   [] Argue points for prog 3 - Does not print parsing erros correctly - incorrect .h dependencies (eg arg parsing) - program chaes (many commands test case)
 
 gcc argparser.c argparser.h util.c util.h -o argparser
+
+./temp_build ./trace_files/temp.addrtrace

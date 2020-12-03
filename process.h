@@ -29,21 +29,24 @@ typedef struct process
     unsigned long PID;
     unsigned long currOffset;
     unsigned long maxAddrOffset;
-    //treeNode* root; //NOTE: this is the root node that holds the pagetable data structure for this process
+    unsigned long memToRemove; // set to zero after removing
+    treeNode *root;            //NOTE: this is the root node that holds the pagetable data structure for this process
     struct process *next;
-    struct LinkedList *chunks; // start: begining byte of line, end: just the pointer of end of the line
+    struct LinkedList *chunks; // start: begining byte of line, end: just the pointer of end of the line, reachedEnd: if the end was really reached for this chunk or was it temporarily put on disk
 } process;
 
-typedef struct chunk{
+typedef struct chunk
+{
     unsigned long start;
     unsigned long end;
     unsigned long lineNumber;
-
+    int reachedEnd;
 } chunk;
 
 process *getProcess(process *head, unsigned long pid);
 process *initProcess(process *prev, unsigned long pid, unsigned long addr);
-chunk *initChunk(int lineNumber ,unsigned long addr);
-
+chunk *initChunk(int lineNumber, unsigned long addr);
+void freeProcess(process *p);
+void freeChunk(chunk *c);
 
 #endif

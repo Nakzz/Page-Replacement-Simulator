@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Title:		Page Replacement Simulator
-// Filename:	lru.c
+// Filename:	fifo.c
 //
 // Course:		cs537, Fall 2020
 // Authors:		Ajmain Naqib, Devanshu Mantri
@@ -29,7 +29,6 @@ PageAlgoStruct *initPageAlgoStruct()
  * Page replacement algorithm 
  * 
  * */
-
 process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long memAddr, process *proc)
 {
     //if evict is true, then tail gets kicked out, return this tail
@@ -60,17 +59,11 @@ process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long me
         listNode *n = initListNode(page);
         found = pushToHead(ll, n);
     }
-    else
-    {
-        //1: if does, move to front
-        removeNode(ll, found);
-        pushToHead(ll, found);
-    }
+
+    //1: if does, do nothing? REVIEW:
 
     if (evict)
-    {
         found = popFromTail(ll);
-    }
 
     Page *_p = (Page *)found->p;
     process *proc = (process *)_p->p;

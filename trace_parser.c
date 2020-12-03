@@ -13,6 +13,9 @@
 
 #include "trace_parser.h"
 
+/**
+ * Return Process node which points to other Processes
+ * */
 process *generateProcessList(char *traceFile)
 {
 
@@ -33,18 +36,22 @@ process *generateProcessList(char *traceFile)
         if (read == 1) // empty line
             continue;
 
-        //REVIEW: check for buffer overflow and underflow using debugger and long unsigned input+1
-        // See if it resets every iterations or needs to be manually cleared after every iteration
-        char s_pid[(int)ceil(log10(UCHAR_MAX)) + 1];
-        char s_addr[(int)ceil(log10(UCHAR_MAX)) + 1];
+        char s_pid[1024]="";
+        char s_addr[1024]="";
+        char extra_read[1024]="";
 
+        errno = 0; /* reset errno to 0 before call */
         unsigned long pid;
         unsigned long addr;
         const int BASE = 0;
         unsigned long offset = 0;
         offset = ftell(fPtr) - read;
 
-        sscanf(line, "%s %s", s_pid, s_addr);
+        sscanf(line, "%s %s %s", s_pid, s_addr, extra_read);
+
+        // printf("%d \n \n", strlen(extra_read));
+        if(strlen(extra_read) >0)
+            errorReportDetail("tracefile format contains error", lineNumber, line);
 
         if (isAllPositiveDigit(s_pid) && isAllPositiveDigit(s_addr))
         // if (isAllDigit(s_pid) && isAllDigit(s_addr))
@@ -55,7 +62,11 @@ process *generateProcessList(char *traceFile)
             pid = strtoul(s_pid, &stopPID, BASE);
             addr = strtoul(s_addr, &stopAddr, BASE);
 
-            // printf(" string: %s %s      long: %ld %ld BASE:(%d) ", s_pid, s_addr, pid, addr, BASE);
+            checkStrtoulError(s_pid, stopPID, pid);
+            checkStrtoulError(s_addr, stopAddr, addr);
+
+            printf(" string: %s %s      long: %ld %ld BASE:(%d) \n", s_pid, s_addr, pid, addr, BASE);
+
             // printf("   strtoul = %ld (base %d)\n", pid, BASE);
             // printf("   strtoul = %ld (base %d)\n", addr, BASE);
         }
@@ -74,9 +85,9 @@ process *generateProcessList(char *traceFile)
             head = initProcess(NULL, pid, offset);
             prev = head;
             chunk *c = initChunk(lineNumber, offset);
-                c->end = offset + read;
+            c->end = offset + read;
 
-                pushToHead(prev->chunks, initListNode(c));
+            pushToHead(prev->chunks, initListNode(c));
         }
         else
         {
@@ -125,7 +136,7 @@ process *generateProcessList(char *traceFile)
                 {
                     chunk *c = initChunk(lineNumber, offset);
                     c->end = offset + read;
-                    pushToTail(temp->chunks, initListNode(c));  //REVIEW: SHOULD BE PUSH TO TAIL?
+                    pushToTail(temp->chunks, initListNode(c)); //REVIEW: SHOULD BE PUSH TO TAIL?
                 }
 
                 //1: if it does, then update maxAddr
@@ -137,4 +148,28 @@ process *generateProcessList(char *traceFile)
 
     fclose(fPtr);
     return head;
+}
+
+/* test return to number and errno values */
+void checkStrtoulError(char *start, char *end, unsigned long val)
+{
+
+    if (start == end)
+        // printf (" number : %ld  invalid  (no digits found, 0 returned)\n", val);
+        errorReport("Error parsing tracefile: invalid (no digits found, 0 returned)");
+    else if (errno == ERANGE && val == ULONG_MAX)
+        // printf (" number : %ld  invalid  (underflow occurred)\n", val);
+        errorReport("Error parsing tracefile: invalid (underflow occurred)");
+
+    else if (errno == ERANGE && val == ULONG_MAX)
+        // printf (" number : %ld  invalid  (overflow occurred)\n", val);
+        errorReport("Error parsing tracefile: invalid (overflow occurred)");
+
+    else if (errno == EINVAL) /* not in all c99 implementations - gcc OK */
+        // printf (" number : %ld  invalid  (base contains unsupported value)\n", val);
+        errorReport("Error parsing tracefile: invalid (base contains unsupported value)");
+
+    else if (errno != 0 && val == 0)
+        // printf (" number : %ld  invalid  (unspecified error occurred)\n", val);
+        errorReport("Error parsing tracefile: invalid (unspecified error occurred)");
 }

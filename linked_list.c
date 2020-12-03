@@ -13,30 +13,46 @@
 
 #include "linked_list.h"
 
+/**
+ * Allocates memory for listnode
+ * */
 listNode *initListNode(void *p)
 {
     listNode *n = malloc(sizeof(listNode));
+    if (n == NULL)
+        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
     n->p = p;
     n->next = NULL;
     n->prev = NULL;
     return n;
 }
 
+/**
+ * Frees memory for listnode
+ * */
 void freeListNode(listNode *n)
 {
     if (n)
         free(n);
 }
 
+/**
+ * Allocates memory for linked list
+ * */
 void freeLinkedList(LinkedList *ll)
 {
     if (ll)
         free(ll);
 }
 
+/**
+ * Allocates memory for linkedlist
+ * */
 LinkedList *initLinkedList()
 {
     LinkedList *ll = malloc(sizeof(LinkedList));
+    if (ll == NULL)
+        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
     ll->size = 0;
     ll->head = NULL;
     ll->tail = NULL;
@@ -44,6 +60,9 @@ LinkedList *initLinkedList()
     return ll;
 }
 
+/**
+ * Adds listnode to head of linkedlist
+ * */
 listNode *pushToHead(LinkedList *ll, listNode *n)
 { //FIFO, LRU !TESTED!
 
@@ -65,8 +84,10 @@ listNode *pushToHead(LinkedList *ll, listNode *n)
     return ll->head;
 }
 
-//NOTE: does not free node from memory
-listNode *popFromTail(LinkedList *ll)
+/**
+ * Removes listnode from linkedlist tail
+ * */
+void *popFromTail(LinkedList *ll)
 { // FIFO LRU !TESTED!
 
     listNode *pop;
@@ -93,11 +114,15 @@ listNode *popFromTail(LinkedList *ll)
         }
     }
 
-    return pop;
+    void *p = pop->p;
+    freeListNode(pop);
+    return p;
 }
 
-//NOTE: does not free node from memory
-listNode *removeNode(LinkedList *ll, listNode *n)
+/**
+ * Removes listnode from linkedlist 
+ * */
+void *removeNode(LinkedList *ll, listNode *n)
 { //LRU !TESTED!
 
     if (ll->head != NULL)
@@ -138,9 +163,10 @@ listNode *removeNode(LinkedList *ll, listNode *n)
 
     return NULL;
 }
-
-//NOTE: does not free node from memory
-listNode *popFromHead(LinkedList *ll)
+/**
+ * Removes listnode from linkedlist head
+ * */
+void *popFromHead(LinkedList *ll)
 { //REVIEW: DO test
     listNode *pop;
 
@@ -163,10 +189,16 @@ listNode *popFromHead(LinkedList *ll)
         }
     }
 
-    return pop;
+    void *p = pop->p;
+    freeListNode(pop);
+    return p;
 }
 
-listNode *pushToTail(LinkedList *ll, listNode *n){
+/**
+ * Adds listnode to tail of linkedlist
+ * */
+listNode *pushToTail(LinkedList *ll, listNode *n)
+{
 
     if (ll->head == NULL)
     {

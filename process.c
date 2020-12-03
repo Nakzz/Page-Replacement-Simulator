@@ -13,6 +13,9 @@
 
 #include "process.h"
 
+/**
+ * Returns process based on provided PID
+ * */
 process *getProcess(process *head, unsigned long pid)
 {
     if (head != NULL)
@@ -30,12 +33,26 @@ process *getProcess(process *head, unsigned long pid)
 
     return NULL;
 }
+/**
+ * Allocates memory for chunk
+ * */
 chunk *initChunk(int lineNumber, unsigned long addr)
 {
     chunk *c = malloc(sizeof(chunk));
+    if (c == NULL)
+        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
     c->lineNumber = lineNumber;
     c->start = addr;
+    c->reachedEnd = 1;
     return c;
+}
+
+/**
+ * Allocates memory for listnode
+ * */
+void freeChunk(chunk *c)
+{
+    free(c);
 }
 
 process *initProcess(process *prev, unsigned long pid, unsigned long addr)
@@ -62,4 +79,17 @@ process *initProcess(process *prev, unsigned long pid, unsigned long addr)
     return p;
 }
 
-//TODO: create a free method for reccursively clean everyting?
+/**
+ * Frees memory allocated for the process
+ * */
+void freeProcess(process *p)
+{
+    //TODO: talk to D and figure out what to free
+    //free treeNode root?
+
+    // traverse thru chunks and freeChunk()
+    //free chunkLinkedList
+
+    free(p);
+
+}

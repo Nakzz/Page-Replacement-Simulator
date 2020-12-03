@@ -18,9 +18,12 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include <errno.h>
 #include "process.h"
+#include "argparser.h"
 #include "util.h"
 
 process *generateProcessList(char *traceFile);
+void checkStrtoulError(char *start, char*end, unsigned long val);
 
 #endif
