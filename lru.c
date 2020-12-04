@@ -63,7 +63,9 @@ process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long me
     else
     {
         //1: if does, move to front
-        removeNode(ll, found);
+        Page *page = removeNode(ll, found);
+         found = initListNode(page);
+
         pushToHead(ll, found);
     }
 

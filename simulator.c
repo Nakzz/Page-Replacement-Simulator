@@ -25,7 +25,6 @@ void secondPass(SpecNode *specification, process *processHead)
         // printf(" \n processing chunk %lu %lu for pid %lu\n", currentChunk->start, currentChunk->end, toRun->PID);
         while (currentByte < currentChunk->end)
         {
-
             read = getline(&line, &len, fPtr);
 
             if (read == 1) // empty line
@@ -86,24 +85,27 @@ void secondPass(SpecNode *specification, process *processHead)
                     pageReplacementAlgorithm(0, algoStruct, addr, toRun);
                     incClock(s);
                     incTMR(s);
+                    printf("Time with hit in first loop: %lu\n", s->TMR);
                     currentByte = ftell(fPtr);
                 }
             }
         }
-        int processHeadNULL = 0;
+
         if (currentChunk->reachedEnd)
         {
             chunk *toFree = popFromHead(toRun->chunks);
-            freeChunk(toFree);
-            listNode *chunkHead = toRun->chunks->head;
-            if (chunkHead == NULL)
+            int canBeFreed = 0;
+            if (toFree->end == toRun->maxAddrOffset)
             {
-                processHead = freeProcess(processHead, toRun);
-                if (processHead == NULL)
-                {
-                    processHeadNULL = 1;
-                }
+                canBeFreed = 1;
+                printf("this proc can be freed");
+            }
+            listNode *chunkHead = toRun->chunks->head;
+            if (chunkHead == NULL && canBeFreed)
+            {
                 numProcesses--;
+                decProcessesRunning(s);
+                pageReplacementDec(algoStruct, s, toRun);
                 if (queue->size == numProcesses)
                 {
                     moveClock(s, queue->head->removeTime);
@@ -114,29 +116,24 @@ void secondPass(SpecNode *specification, process *processHead)
                 chunk *tempChunk = (chunk *)chunkHead->p;
                 toRun->currOffset = tempChunk->start;
             }
+            freeChunk(toFree);
         }
 
         while (isTime(queue, getRunningTime(s)))
         {
             process *toReadMissed = diskPopFromHead(queue);
             incProcessesRunning(s);
-            readMissed(fPtr, currentByte, toReadMissed, s, algoStruct, &maxSize, queue, &numProcesses, &processHead);
-            if (processHead == NULL)
-            {
-                processHeadNULL = 1;
-                break;
-            }
+            readMissed(fPtr, currentByte, toReadMissed, s, algoStruct, &maxSize, queue, &numProcesses);
         }
 
-        if (processHeadNULL)
-        {
-            break;
-        }
         // printf("currentByte: %lu\n", currentByte);
         toRun = findNextUnBlockedProcess(queue, processHead);
         if (!toRun)
         {
-            break;
+            if (queue->size != 0)
+            {
+                moveClock(s, queue->head->removeTime);
+            }
         }
         currentByte = toRun->currOffset;
         // printf("currentByte aftr set: %lu\n", currentByte);
@@ -157,7 +154,7 @@ int getNumProcesses(process *head)
     return size;
 }
 
-void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, PageAlgoStruct *algoStruct, unsigned long *maxSize, DiskQueue *queue, int *numProcesses, process **processHead)
+void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, PageAlgoStruct *algoStruct, unsigned long *maxSize, DiskQueue *queue, int *numProcesses)
 {
     // printf("setting file to byte: %lu\n", p->currOffset);
     fseek(fPtr, p->currOffset, SEEK_SET);
@@ -199,13 +196,14 @@ void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, Pa
                 incClock(s);
                 incMemBeingUsed(s);
                 incTMR(s);
+                printf("Time with root add, 2nd loop: %lu\n", s->TMR);
                 addedMem = 1;
                 pageReplacementAlgorithm(0, algoStruct, addr, p);
                 currentByte = ftell(fPtr);
             }
             else if (!addedMem)
             {
-                if (getSize(s) == *(maxSize))
+                if (getSize(s) == (*maxSize))
                 {
                     process *procToRem = pageReplacementAlgorithm(1, algoStruct, addr, p);
                     void *rootToRem = procToRem->root;
@@ -224,6 +222,7 @@ void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, Pa
                 }
                 incClock(s);
                 incTMR(s);
+                printf("Time with add in 2nd loop: %lu\n", s->TMR);
                 addedMem = 1;
                 currentByte = ftell(fPtr);
             }
@@ -251,6 +250,7 @@ void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, Pa
                     pageReplacementAlgorithm(0, algoStruct, addr, p);
                     incClock(s);
                     incTMR(s);
+                    printf("Time with hit in 2nd loop: %lu\n", s->TMR);
                     currentByte = ftell(fPtr);
                 }
             }
@@ -259,20 +259,41 @@ void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, Pa
         if (currChunk->reachedEnd)
         {
             void *toFree = popFromHead(p->chunks);
-            free(toFree);
-            currChunkList = p->chunks->head;
-
-            if (currChunkList == NULL)
+            chunk *toFreeChunk = (chunk *)toFree;
+            int canBeFreed = 0;
+            if (p->maxAddrOffset == toFreeChunk->end)
             {
-                *(processHead) = freeProcess(*(processHead), p);
+                canBeFreed = 1;
+            }
+
+            currChunkList = p->chunks->head;
+            if (currChunkList == NULL && canBeFreed)
+            {
+                int temp = *numProcesses;
+                temp--;
+                *numProcesses = temp;
+                decProcessesRunning(s);
+                pageReplacementDec(algoStruct, s, p);
                 currentByte = currPos;
+                if (queue->size == (*numProcesses))
+                {
+                    moveClock(s, queue->head->removeTime);
+                }
             }
             else
             {
                 currChunk = (chunk *)currChunkList->p;
                 p->currOffset = currChunk->start;
-                currentByte = currPos;
+                if (isTime(queue, getRunningTime(s)))
+                {
+                    currentByte = currPos;
+                }
+                else
+                {
+                    currentByte = currChunk->start;
+                }
             }
+            free(toFreeChunk);
         }
     }
 }

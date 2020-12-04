@@ -6,7 +6,7 @@
 
 typedef struct diskNode
 {
-    unsigned long long removeTime;
+    unsigned long removeTime;
     process *proc;
     struct diskNode *next;
 } diskNode;

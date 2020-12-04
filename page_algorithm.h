@@ -14,6 +14,7 @@
 
 #include "linked_list.h"
 #include "process.h"
+#include "statistics.h"
 
 typedef struct PageAlgoStruct
 {
@@ -31,6 +32,8 @@ typedef struct Page
 PageAlgoStruct *initPageAlgoStruct();
 Page *initPage(unsigned long memAddr, process *p);
 process *pageReplacementAlgorithm(int evict, PageAlgoStruct *pas, unsigned long memAddr, process *p); //added evict bool so you know when to pop off a listnode and send it's void pointer to me
+void pageReplacementDec(PageAlgoStruct *pas, Statistics *s,  process *p);
+// dec number of proeces
 // also in this you will now hold mem refrences instead of pointers to treeNodes
 
 

@@ -41,6 +41,7 @@ void incProcessesRunning(Statistics *s);
 void decProcessesRunning(Statistics *s);
 void incRunnableProcesses(Statistics *s);
 void incMemBeingUsed(Statistics *s);
+void decUsableMem(Statistics *s);
 void incUsableMem(Statistics *s);
 void freeProcessUsableMem(Statistics *s, unsigned long processMem);
 void incClock(Statistics *s);

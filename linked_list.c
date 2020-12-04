@@ -65,6 +65,11 @@ LinkedList *initLinkedList()
  * */
 listNode *pushToHead(LinkedList *ll, listNode *n)
 { //FIFO, LRU !TESTED!
+    if(!ll){
+        printf("pushToHead received bad ll");
+        ll = initLinkedList();
+    }
+        
 
     if (ll->head == NULL)
     {
@@ -164,6 +169,7 @@ void *removeNode(LinkedList *ll, listNode *n)
 
     return NULL;
 }
+
 /**
  * Removes listnode from linkedlist head
  * */

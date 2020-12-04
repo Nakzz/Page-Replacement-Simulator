@@ -12,10 +12,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "process.h"
-
+// #include "main.c"
 /**
  * Returns process based on provided PID
  * */
+
+// static int processNum = 0;  //TODO: remove
+
 process *getProcess(process *head, unsigned long pid)
 {
     if (head != NULL)
@@ -85,7 +88,7 @@ process *initProcess(process *prev, unsigned long pid, unsigned long addr)
     // p->prev = prev;
     // prev->next =p;
     p->root = NULL;
-    p->next = NULL;
+    // p->next = NULL;
     return p;
 }
 
@@ -94,6 +97,9 @@ process *initProcess(process *prev, unsigned long pid, unsigned long addr)
  * */
 process *freeProcess(process *head, process *p)
 {
+
+    // printf("        Freeing Process num: %d \n", processNum++);
+
     if (!p)
         return NULL;
     process *toRemove;

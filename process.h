@@ -26,6 +26,7 @@
 
 typedef struct process
 {
+    int canBeFreed;
     unsigned long PID;
     unsigned long currOffset;
     unsigned long maxAddrOffset;

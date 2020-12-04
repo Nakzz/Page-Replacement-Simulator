@@ -123,6 +123,11 @@ void incUsableMem(Statistics *s)
     s->useableMem += s->memBeingUsed;
 }
 
+void decUsableMem(Statistics *s){
+    s->useableMem -= s->memBeingUsed;
+}
+
+
 /**
  * Increments clock tick by 1ns
  **/

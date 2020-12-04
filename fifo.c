@@ -89,3 +89,26 @@ process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long me
     }
     return _proc;
 }
+
+void pageReplacementDec(PageAlgoStruct *pas, Statistics *s,  process *p){
+
+     LinkedList *ll = pas->datastructure;
+    // listNode *found = NULL;
+    listNode *n = ll->head;
+
+    //1: check if exists in Linked list
+
+    while (n)
+    {
+        Page *page = n->p;
+
+        if (page && page->p == p)
+        {
+            // found = n;
+            decUsableMem(s);
+            // break;
+        }
+
+        n = n->next;
+    }
+}
