@@ -53,8 +53,8 @@ process *diskPopFromHead(DiskQueue *q)
         toReturn = q->head->proc;
         if (q->head == q->tail)
         {
-            q->tail == NULL;
-            q->head == NULL;
+            q->tail = NULL;
+            q->head = NULL;
         }
         else
         {
@@ -75,12 +75,17 @@ int inDiskQueue(DiskQueue *q, unsigned long pid)
         {
             return 1;
         }
+        current = current->next;
     }
     return 0;
 }
 
 int isTime(DiskQueue *q, unsigned long int clock)
 {
+    if (!q->head)
+    {
+        return 0;
+    }
     if (q->head->removeTime == clock)
     {
         return 1;

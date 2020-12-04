@@ -36,9 +36,9 @@ process *generateProcessList(char *traceFile)
         if (read == 1) // empty line
             continue;
 
-        char s_pid[1024]="";
-        char s_addr[1024]="";
-        char extra_read[1024]="";
+        char s_pid[1024] = "";
+        char s_addr[1024] = "";
+        char extra_read[1024] = "";
 
         errno = 0; /* reset errno to 0 before call */
         unsigned long pid;
@@ -50,7 +50,7 @@ process *generateProcessList(char *traceFile)
         sscanf(line, "%s %s %s", s_pid, s_addr, extra_read);
 
         // printf("%d \n \n", strlen(extra_read));
-        if(strlen(extra_read) >0)
+        if (strlen(extra_read) > 0)
             errorReportDetail("tracefile format contains error", lineNumber, line);
 
         if (isAllPositiveDigit(s_pid) && isAllPositiveDigit(s_addr))
@@ -65,7 +65,7 @@ process *generateProcessList(char *traceFile)
             checkStrtoulError(s_pid, stopPID, pid);
             checkStrtoulError(s_addr, stopAddr, addr);
 
-            printf(" string: %s %s      long: %ld %ld BASE:(%d) \n", s_pid, s_addr, pid, addr, BASE);
+            // printf(" string: %s %s      long: %ld %ld BASE:(%d) \n", s_pid, s_addr, pid, addr, BASE);
 
             // printf("   strtoul = %ld (base %d)\n", pid, BASE);
             // printf("   strtoul = %ld (base %d)\n", addr, BASE);
@@ -146,6 +146,7 @@ process *generateProcessList(char *traceFile)
         }
     }
 
+    prev = NULL;
     fclose(fPtr);
     return head;
 }

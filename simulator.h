@@ -7,12 +7,12 @@
 #include "statistics.h"
 #include <string.h>
 
-void secondPass(SpecNode *specification, process *processHead, char *traceFile);
+void secondPass(SpecNode *specification, process *processHead);
 
 int getNumProcesses(process *head);
 
-void readMissed(FILE *fPtr, long int currPos, process *p, unsigned long int *clock, unsigned long *size, PageAlgoStruct *algoStruct, unsigned long *maxSize, DiskQueue *queue, int numProcesses);
+void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, PageAlgoStruct *algoStruct, unsigned long *maxSize, DiskQueue *queue, int *numProcesses, process **processHead);
 
-process *findNextProcess(unsigned long endPos, process *head);
+process *findNextUnBlockedProcess(DiskQueue *q, process *head);
 
 #endif

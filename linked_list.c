@@ -70,7 +70,6 @@ listNode *pushToHead(LinkedList *ll, listNode *n)
     {
         ll->head = n; // set the only element as tail
         ll->size = ll->size + 1;
-
         ll->tail = n; // set the only element as tail
     }
     else
@@ -79,6 +78,7 @@ listNode *pushToHead(LinkedList *ll, listNode *n)
         n->next = ll->head; // add new heads next
         ll->head = n;       // set new head
         ll->size = ll->size + 1;
+        // ll->tail->next = n;
     }
 
     return ll->head;
@@ -96,7 +96,7 @@ void *popFromTail(LinkedList *ll)
         pop = NULL;
     else
     {
-        if (ll->head == ll->tail)
+        if (ll->head == ll->tail) // only node
         {
             pop = ll->head;
             ll->head = NULL;
@@ -106,11 +106,12 @@ void *popFromTail(LinkedList *ll)
         else
         {
             pop = ll->tail;
-            ll->tail->prev->next = NULL;
             ll->size = ll->size - 1;
 
             if (ll->size == 1)
                 ll->tail = ll->head;
+            else
+                ll->tail = ll->tail->prev;
         }
     }
 
@@ -184,7 +185,8 @@ void *popFromHead(LinkedList *ll)
         else
         {
             pop = ll->head;
-            ll->head->prev->next = ll->head->next;
+            // ll->tail->next = ll->head->next;
+            ll->head = ll->head->next;
             ll->size = ll->size - 1;
         }
     }
@@ -209,8 +211,13 @@ listNode *pushToTail(LinkedList *ll, listNode *n)
     }
     else
     {
+        listNode *temp = ll->tail;
         ll->tail->next = n; // add to current tail
-        ll->tail = n;       // set new tail
+        // ll->head->prev = n;
+        ll->tail = n;          // set new tail
+        ll->tail->prev = temp; // set new tail
+        // ll->tail->next = ll->head;       // set new tail
+
         ll->size = ll->size + 1;
     }
 

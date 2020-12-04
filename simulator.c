@@ -1,38 +1,38 @@
 #include "simulator.h"
 
-void secondPass(SpecNode *specification, process *processHead, char *traceFile)
+void secondPass(SpecNode *specification, process *processHead)
 {
     int numProcesses = getNumProcesses(processHead);
     Statistics *s = initStatistics(numProcesses);
-    unsigned long size = 0;
     unsigned long maxSize = (specification->memSize) / (specification->pageSize);
     DiskQueue *queue = initDiskQueue();
     PageAlgoStruct *algoStruct = initPageAlgoStruct();
 
-    long int currentByte = 0;
+    unsigned long currentByte = 0;
     const int BASE = 0;
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
-    FILE *fPtr = fopen(traceFile, "r");
+    FILE *fPtr = fopen(specification->traceFile, "r");
     if (!fPtr)
         errorReport("fopen() failed: ");
 
-    process *toRun = findNextProcess(currentByte, processHead);
+    process *toRun = processHead;
 
     while (toRun != NULL)
     {
         chunk *currentChunk = (chunk *)toRun->chunks->head->p;
-
+        // printf(" \n processing chunk %lu %lu for pid %lu\n", currentChunk->start, currentChunk->end, toRun->PID);
         while (currentByte < currentChunk->end)
         {
+
             read = getline(&line, &len, fPtr);
 
             if (read == 1) // empty line
                 continue;
 
-            char s_pid[(int)ceil(log10(UCHAR_MAX)) + 1];
-            char s_addr[(int)ceil(log10(UCHAR_MAX)) + 1];
+            char s_pid[1024] = "";
+            char s_addr[1024] = "";
 
             sscanf(line, "%s %s", s_pid, s_addr);
 
@@ -44,54 +44,70 @@ void secondPass(SpecNode *specification, process *processHead, char *traceFile)
 
             if (pid != toRun->PID)
             {
-                errorReport("currentByte < toRun->chunks->end did not work");
+                printf("pid: %li\n", pid);
+                errorReport("   currentByte < toRun->chunks->end did not work");
             }
 
             if (toRun->root == NULL)
             {
-                diskPushToTail(queue, toRun, s->clockTick);
+                decProcessesRunning(s);
+                incTPI(s);
+                diskPushToTail(queue, toRun, getRunningTime(s));
                 toRun->currOffset = ftell(fPtr) - read;
+                // printf("    toRun-> PID{%lu}  toRun->currOffset:{%lu}\n", toRun->PID, toRun->currOffset);
                 currentByte = currentChunk->end;
                 currentChunk->reachedEnd = 0;
                 if (queue->size == numProcesses)
                 {
-                    clock = queue->head->removeTime;
+                    moveClock(s, queue->head->removeTime);
                 }
             }
             else
             {
-                treeNode *root = toRun->root;
+                void *root = toRun->root;
                 treeNode *present = findNode(addr, &root);
 
                 if (!present)
                 {
-                    diskPushToTail(queue, toRun, clock);
+                    decProcessesRunning(s);
+                    incTPI(s);
+                    diskPushToTail(queue, toRun, getRunningTime(s));
                     toRun->currOffset = ftell(fPtr) - read;
+                    // printf("    toRun-> PID then toRun->currOffset: %lu %lu\n", toRun->PID, toRun->currOffset);
                     currentByte = currentChunk->end;
                     currentChunk->reachedEnd = 0;
                     if (queue->size == numProcesses)
                     {
-                        clock = queue->head->removeTime;
+                        moveClock(s, queue->head->removeTime);
                     }
                 }
                 else
                 {
                     pageReplacementAlgorithm(0, algoStruct, addr, toRun);
-                    clock++;
-                    //stats stuff
+                    incClock(s);
+                    incTMR(s);
                     currentByte = ftell(fPtr);
                 }
             }
         }
+        int processHeadNULL = 0;
         if (currentChunk->reachedEnd)
         {
-            listNode *toFree = popFromHead(toRun->chunks);
-            free(toFree->p);
-            free(toFree);
+            chunk *toFree = popFromHead(toRun->chunks);
+            freeChunk(toFree);
             listNode *chunkHead = toRun->chunks->head;
             if (chunkHead == NULL)
             {
-                //free process somehow
+                processHead = freeProcess(processHead, toRun);
+                if (processHead == NULL)
+                {
+                    processHeadNULL = 1;
+                }
+                numProcesses--;
+                if (queue->size == numProcesses)
+                {
+                    moveClock(s, queue->head->removeTime);
+                }
             }
             else
             {
@@ -99,15 +115,34 @@ void secondPass(SpecNode *specification, process *processHead, char *traceFile)
                 toRun->currOffset = tempChunk->start;
             }
         }
-        while (isTime(queue, clock))
+
+        while (isTime(queue, getRunningTime(s)))
         {
             process *toReadMissed = diskPopFromHead(queue);
-            readMissed(fPtr, currentByte, toReadMissed->root, &clock, &size, algoStruct, &maxSize, queue, numProcesses);
+            incProcessesRunning(s);
+            readMissed(fPtr, currentByte, toReadMissed, s, algoStruct, &maxSize, queue, &numProcesses, &processHead);
+            if (processHead == NULL)
+            {
+                processHeadNULL = 1;
+                break;
+            }
         }
-        toRun = findNextProcess(currentByte, processHead);
+
+        if (processHeadNULL)
+        {
+            break;
+        }
+        // printf("currentByte: %lu\n", currentByte);
+        toRun = findNextUnBlockedProcess(queue, processHead);
+        if (!toRun)
+        {
+            break;
+        }
         currentByte = toRun->currOffset;
-        // need to check for chunk head but actually set the ftell to offset instead, also if reachedEnd for chunk you need to pop it off the chunks, also check all blocked switch to that if possible
+        // printf("currentByte aftr set: %lu\n", currentByte);
+        fseek(fPtr, currentByte, SEEK_SET);
     }
+    printStats(s);
 }
 
 int getNumProcesses(process *head)
@@ -122,17 +157,16 @@ int getNumProcesses(process *head)
     return size;
 }
 
-void readMissed(FILE *fPtr, long int currPos, process *p, unsigned long int *clock, unsigned long *size, PageAlgoStruct *algoStruct, unsigned long *maxSize, DiskQueue *queue, int numProcesses)
+void readMissed(FILE *fPtr, unsigned long currPos, process *p, Statistics *s, PageAlgoStruct *algoStruct, unsigned long *maxSize, DiskQueue *queue, int *numProcesses, process **processHead)
 {
+    // printf("setting file to byte: %lu\n", p->currOffset);
     fseek(fPtr, p->currOffset, SEEK_SET);
-    printf("setting file to byte: %lu\n", p->currOffset);
 
     listNode *currChunkList = p->chunks->head;
     chunk *currChunk = (chunk *)currChunkList->p;
     currChunk->reachedEnd = 1;
     int addedMem = 0;
-    int first = 1;
-    long int currentByte = p->currOffset;
+    unsigned long currentByte = p->currOffset;
 
     while (currentByte < currPos)
     {
@@ -142,8 +176,8 @@ void readMissed(FILE *fPtr, long int currPos, process *p, unsigned long int *clo
             char *line = NULL;
             int read;
             read = getline(&line, &len, fPtr);
-            char s_pid[(int)ceil(log10(UCHAR_MAX)) + 1];
-            char s_addr[(int)ceil(log10(UCHAR_MAX)) + 1];
+            char s_pid[1024] = "";
+            char s_addr[1024] = "";
 
             sscanf(line, "%s %s", s_pid, s_addr);
 
@@ -154,97 +188,121 @@ void readMissed(FILE *fPtr, long int currPos, process *p, unsigned long int *clo
             addr = strtoul(s_addr, NULL, 10);
             if (pid != p->PID)
             {
+                printf("ftell() of readline beginning %li\n", (ftell(fPtr) - read));
                 errorReport("something is wrong with the currOffset pointer as pid != p->PID");
             }
 
             if (p->root == NULL)
             {
-                p->root = addNode(addr, &(p->root));
-                *(clock)++;
-                //stats stuff
-                *(size)++;
+                addNode(addr, &(p->root));
+                p->treeSize++;
+                incClock(s);
+                incMemBeingUsed(s);
+                incTMR(s);
                 addedMem = 1;
                 pageReplacementAlgorithm(0, algoStruct, addr, p);
                 currentByte = ftell(fPtr);
             }
             else if (!addedMem)
             {
-                if (*(size) == *(maxSize))
+                if (getSize(s) == *(maxSize))
                 {
                     process *procToRem = pageReplacementAlgorithm(1, algoStruct, addr, p);
-                    treeNode *rootToRem = procToRem->root;
+                    void *rootToRem = procToRem->root;
                     deleteNode(procToRem->memToRemove, &rootToRem);
+                    procToRem->treeSize--;
                     procToRem->memToRemove = 0;
                     addNode(addr, &(p->root));
+                    p->treeSize++;
                 }
                 else
                 {
                     addNode(addr, &(p->root));
-                    *(size)++;
+                    p->treeSize++;
+                    incMemBeingUsed(s);
                     pageReplacementAlgorithm(0, algoStruct, addr, p);
                 }
-                *(clock)++;
-                //stats stuff
+                incClock(s);
+                incTMR(s);
                 addedMem = 1;
                 currentByte = ftell(fPtr);
             }
             else
             {
-                treeNode *present = findNode(addr, &(p->root));
+                void *root = p->root;
+                treeNode *present = findNode(addr, &root);
 
                 if (!present)
                 {
-                    diskPushToTail(queue, p, clock);
+                    decProcessesRunning(s);
+                    incTPI(s);
+                    diskPushToTail(queue, p, getRunningTime(s));
                     p->currOffset = ftell(fPtr) - read;
+                    // printf("p-> PID then p->currOffset: %lu %lu\n", p->PID, p->currOffset);
                     currChunk->reachedEnd = 0;
                     currentByte = currPos;
-                    if (queue->size == numProcesses)
+                    if (queue->size == *(numProcesses))
                     {
-                        *(clock) = queue->head->removeTime;
+                        moveClock(s, queue->head->removeTime);
                     }
                 }
                 else
                 {
                     pageReplacementAlgorithm(0, algoStruct, addr, p);
-                    *(clock)++;
-                    //stats stuff
+                    incClock(s);
+                    incTMR(s);
                     currentByte = ftell(fPtr);
                 }
             }
         }
+
         if (currChunk->reachedEnd)
         {
-            listNode *toFree = popFromHead(p->chunks);
-            free(toFree->p);
+            void *toFree = popFromHead(p->chunks);
             free(toFree);
             currChunkList = p->chunks->head;
 
             if (currChunkList == NULL)
             {
-                //free process somehow
+                *(processHead) = freeProcess(*(processHead), p);
                 currentByte = currPos;
             }
             else
             {
                 currChunk = (chunk *)currChunkList->p;
-                currentByte = currChunk->start;
-                p->currOffset = currentByte;
+                p->currOffset = currChunk->start;
+                currentByte = currPos;
             }
         }
     }
 }
 
-process *findNextProcess(unsigned long endPos, process *head)
+process *findNextUnBlockedProcess(DiskQueue *q, process *head)
 {
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    process *nextProcess = NULL;
+    chunk *nextByteChunk = NULL;
     process *current = head;
     while (current != NULL)
     {
-        chunk *currentChunkHead = (chunk *)current->chunks->head->p;
-        if (currentChunkHead->start == endPos)
+        chunk *currentChunk = (chunk *)current->chunks->head->p;
+        if (!(inDiskQueue(q, current->PID)))
         {
-            return current;
+            if (nextProcess == NULL)
+            {
+                nextProcess = current;
+                nextByteChunk = currentChunk;
+            }
+            else if (currentChunk->start < nextByteChunk->start)
+            {
+                nextProcess = current;
+                nextByteChunk = currentChunk;
+            }
         }
         current = current->next;
     }
-    return NULL;
+    return nextProcess;
 }

@@ -33,14 +33,5 @@ Page *initPage(unsigned long memAddr, process *p);
 process *pageReplacementAlgorithm(int evict, PageAlgoStruct *pas, unsigned long memAddr, process *p); //added evict bool so you know when to pop off a listnode and send it's void pointer to me
 // also in this you will now hold mem refrences instead of pointers to treeNodes
 
-Page *initPage(unsigned long memAddr, process *p)
-{
-    Page *page = malloc(sizeof(Page));
-    if (page == NULL)
-        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
-    page->p = p;
-    page->memAddr = memAddr;
 
-    return page;
-}
 #endif

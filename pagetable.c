@@ -12,8 +12,9 @@ treeNode *initTreeNode(unsigned long addr)
     return newNode;
 }
 
-int compare(void *a, void *b)
+int compare(const void *a, const void *b)
 {
+
     treeNode *x = (treeNode *)a;
     treeNode *y = (treeNode *)b;
 
@@ -28,14 +29,16 @@ int compare(void *a, void *b)
     return 0;
 }
 
-treeNode *findNode(unsigned long memAddr, const void **root)
+treeNode *findNode(unsigned long memAddr, void *const *root)
 {
     treeNode toCompare;
-    toCompare.addr = memAddr;
     treeNode *toReturn;
-    void *present = tfind(&toCompare, root, compare);
+    toCompare.addr = memAddr;
+
+    void **present = tfind(&toCompare, root, compare);
     if (!present)
     {
+        // printf("Key not Found: %lu\n", memAddr);
         toReturn = NULL;
     }
     else
@@ -45,26 +48,39 @@ treeNode *findNode(unsigned long memAddr, const void **root)
     return toReturn;
 }
 
-treeNode *addNode(unsigned long memAddr, void **root)
+void addNode(unsigned long memAddr, void **root)
 {
     treeNode *toCompare = initTreeNode(memAddr);
-    void *present = tsearch(toCompare, root, compare);
+
+    void **present = tsearch(toCompare, root, compare);
     if (!present)
     {
         errorReport("Not enough memory for node to be added to tree");
     }
-    toCompare = *(treeNode **)present; //possible mem leak if toCompare and what is returned by tsearch if not found is not the same mem addr/ pointer
-    return toCompare;
+    else if (toCompare != *present)
+    {
+        // printf("Node already exsits in tree, with key: %lu\n", memAddr);
+        free(toCompare);
+        toCompare = NULL;
+    }
+    else
+    {
+        // printf("Added Node with Key: %lu\n", memAddr);
+    }
 }
 
 void deleteNode(unsigned long memAddr, void **root)
 {
-    treeNode toCompare;
-    toCompare.addr = memAddr;
-    void *present = tdelete(&toCompare, root, compare);
-    if (!present)
+    treeNode *toDelete = findNode(memAddr, root);
+    if (toDelete != NULL)
     {
-        errorReport("Node to delete was not in tree");
+        tdelete(&toDelete, root, compare);
     }
-    free(present);
+    free(toDelete);
+}
+
+void freeNode(void *toFree)
+{
+    treeNode *toFreeNode = toFree;
+    free(toFreeNode);
 }

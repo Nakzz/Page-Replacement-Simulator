@@ -2,11 +2,7 @@
 
 SpecNode *argParser(int argc, char **argv)
 {
-    SpecNode *specifications = malloc(sizeof(SpecNode));
-    if (specifications == NULL)
-    {
-        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
-    }
+    SpecNode *specifications = initSpecNode();
     if (argc > 6)
     {
         errorReport("TOO MANY ARGUMENTS");
@@ -83,6 +79,17 @@ SpecNode *argParser(int argc, char **argv)
     return specifications;
 }
 
+SpecNode *initSpecNode()
+{
+    SpecNode *specifications = malloc(sizeof(SpecNode));
+    if (specifications == NULL)
+    {
+        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
+    }
+    specifications->memSize = 1048576;
+    specifications->pageSize = 4096;
+    return specifications;
+}
 bool isPowerOfTwo(unsigned long n)
 {
     if (n == 0)

@@ -23,18 +23,20 @@ Statistics *initStatistics(unsigned int numProcesses)
         errorReport("COULD NOT MALLOC STATISTICS MODULE");
     }
     s->clockTick = 0;
-    s->processRunning = numProcesses;
+    s->runnableProcesses = 0;
+    s->processesRunning = numProcesses;
     s->TMR = 0;
     s->TPI = 0;
     s->useableMem = 0;
+    return s;
 }
 
 /**
  * Returns the count of how many pages frames are occupied and average this over each clock tick that the simulator runs.
  **/
-unsigned long getAMU(Statistics *s)
+double getAMU(Statistics *s)
 {
-    unsigned long amu = s->useableMem / s->clockTick;
+    double amu = s->useableMem / (double)s->clockTick;
     return amu;
 }
 
@@ -42,9 +44,10 @@ unsigned long getAMU(Statistics *s)
  * Returns the count of average of the number of processes that are running (or runable). 
  * This value is averaged over each clock tick for which the simulator runs
  **/
-unsigned long getARP(Statistics *s)
+double getARP(Statistics *s)
 {
-    unsigned long arp = s->processesRunning / s->clockTick;
+    double arp = s->runnableProcesses / (double)s->clockTick;
+    return arp;
 }
 
 /**
@@ -87,49 +90,67 @@ unsigned long getRunningTime(Statistics *s)
     return s->clockTick;
 }
 
+unsigned long getSize(Statistics *s)
+{
+    return s->memBeingUsed;
+}
+
+void incProcessesRunning(Statistics *s)
+{
+    s->processesRunning++;
+}
+
+void decProcessesRunning(Statistics *s)
+{
+    s->processesRunning--;
+}
+
 /**
  * Increments total number of process running
  **/
-void incProcessesRunning(Statistics *s, unsigned long runnableProcesses)
+void incRunnableProcesses(Statistics *s)
 {
-    s->processesRunning += runnableProcesses;
+    s->runnableProcesses += s->processesRunning;
 }
 
-void incUsableMem(Statistics *s, unsigned long useableMem)
+void incMemBeingUsed(Statistics *s)
 {
-    s->useableMem += useableMem;
+    s->memBeingUsed++;
+}
+
+void incUsableMem(Statistics *s)
+{
+    s->useableMem += s->memBeingUsed;
 }
 
 /**
  * Increments clock tick by 1ns
  **/
-void incClock(Statistics *s, unsigned long runnableProcesses, unsigned long usableMem)
+void incClock(Statistics *s)
 {
     s->clockTick = s->clockTick + 1;
-
-    incProcessesRunning(runnableProcesses);
-    incUsableMem(usableMem);
+    incRunnableProcesses(s);
+    incUsableMem(s);
 }
 
 /**
  * Move clock tick given time
  **/
-void moveClock(Statistics *s, unsigned long useableMem, unsigned long timeToMoveTo)
+void moveClock(Statistics *s, unsigned long timeToMoveTo)
 {
     long int difference = timeToMoveTo - s->clockTick;
     s->clockTick = timeToMoveTo;
-    unsigned long memUsable = useableMem * difference;
-    incUsableMem(memUsable);
+    s->useableMem += (s->memBeingUsed * difference);
 }
 
 void printStats(Statistics *s)
 {
-    unsigned long amu = getAMU(s);
-    unsigned long aru = getARP(s);
+    double amu = getAMU(s);
+    double arp = getARP(s);
 
-    printf("Average Memory Utilization (AMU): %/ul\n", amu);
-    printf("Average Runnable Processes (ARP): %/ul\n", arp);
-    printf("Total Memory References (TMR): %ul\n", s->TMR);
-    printf("Total Page Ins (TPI): %ul\n", s->TPI);
-    printf("Running Time: %ul\n", s->clockTick);
+    printf("\n\n Average Memory Utilization (AMU): %f\n", amu);
+    printf("Average Runnable Processes (ARP): %f\n", arp);
+    printf("Total Memory References (TMR): %lu\n", s->TMR);
+    printf("Total Page Ins (TPI): %lu\n", s->TPI);
+    printf("Running Time: %lu\n", s->clockTick);
 }

@@ -54,3 +54,8 @@ which indicates that process 1234 referenced page 10000.
 gcc argparser.c argparser.h util.c util.h -o argparser
 
 ./temp_build ./trace_files/temp.addrtrace
+
+/build/glibc-S7xCS9/glibc-2.27/misc/tsearch.c
+
+
+valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes ./temp_build ./trace_files/temp.addrtrace

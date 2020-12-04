@@ -68,28 +68,78 @@ process *initProcess(process *prev, unsigned long pid, unsigned long addr)
     }
 
     if (prev != NULL)
+    {
+        while (prev->next)
+        { //Find the last process
+
+            prev = prev->next;
+        }
+
         prev->next = p;
+    }
 
     p->PID = pid;
     p->currOffset = addr;
     p->maxAddrOffset = addr;
     p->chunks = initLinkedList();
-    //TODO: init listNode? D thinks i should init and free in the algo based on hit or miss.
-
+    // p->prev = prev;
+    // prev->next =p;
+    p->root = NULL;
+    p->next = NULL;
     return p;
 }
 
 /**
  * Frees memory allocated for the process
  * */
-void freeProcess(process *p)
+process *freeProcess(process *head, process *p)
 {
-    //TODO: talk to D and figure out what to free
-    //free treeNode root?
+    if (!p)
+        return NULL;
+    process *toRemove;
 
-    // traverse thru chunks and freeChunk()
-    //free chunkLinkedList
+    if (head == p)
+    {
+        toRemove = p;
+        head = p->next;
+    }
+    else
+    {
+        process *curr;
+        while (curr)
+        {
+            if (curr == p)
+            {
 
-    free(p);
+                toRemove = p;
+                break;
+            }
+            curr = curr->next;
+        }
+    }
 
+    if (toRemove)
+    {
+        // traverse thru chunks and freeChunk()
+        //free chunkLinkedList
+
+        // freeLinkedList(p->chunks);
+        // if (toRemove->prev != NULL)
+        //     toRemove->prev = toRemove->next;
+        // else
+        // {
+        //     toRemove->prev == NULL;
+        // }
+
+        // else
+        //     toRemove->next
+
+        tdestroy(toRemove->root, freeNode);
+
+        free(toRemove);
+    }
+
+    if (head == NULL)
+        return NULL;
+    return head;
 }

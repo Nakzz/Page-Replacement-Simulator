@@ -1,8 +1,8 @@
 CC = gcc 
 CFLAGS = -Wall -pedantic -ggdb -Wextra
-OBJECTS = main.o util.o trace_parser.o process.o argparser.o linked_list.o
+OBJECTS = main.o util.o trace_parser.o process.o argparser.o linked_list.o simulator.o statistics.o pagetable.o diskqueue.o fifo.o
 
-temp_build: $(OBJECTS)
+temp_build: $(OBJECTS) 
 	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} -lm
 
 argparser.o: argparser.c argparser.h 
@@ -23,15 +23,18 @@ process.o: process.c process.h
 linked_list.o: linked_list.c linked_list.h
 	$(CC) $(CFLAGS) -c linked_list.c
 
-# executor.o: executor.c executor.h
-# 	$(CC) $(CFLAGS) -c executor.c
+simulator.o: simulator.c simulator.h
+	$(CC) $(CFLAGS) -c simulator.c
 
-# build_model.o: build_model.c build_model.h
-# 	$(CC) $(CFLAGS) -c build_model.c
+statistics.o: statistics.c statistics.h
+	$(CC) $(CFLAGS) -c statistics.c
 
-# build_graph.o: build_graph.c build_graph.c
-# 	$(CC) $(CFLAGS) -c build_graph.c
+pagetable.o: pagetable.c pagetable.h
+	$(CC) $(CFLAGS) -c pagetable.c
 
+diskqueue.o: diskqueue.c diskqueue.h
+	$(CC) $(CFLAGS) -c diskqueue.c
+	
 clean:
 	rm -f $(OBJECTS) temp_build
 
@@ -44,6 +47,9 @@ new: clean
 	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} lru.o -lm
 537pfsim-clock: $(OBJECTS) clock.o
 	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} clock.o -lm
+
+fifo.o: fifo.c page_algorithm.h
+	$(CC) $(CFLAGS) -c fifo.c
 
 test:
 	@printf "\n\n Test \n"

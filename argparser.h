@@ -15,5 +15,6 @@ typedef struct SpecNode
 } SpecNode;
 
 SpecNode *argParser(int argc, char **argv);
+SpecNode* initSpecNode();
 bool isPowerOfTwo(unsigned long n);
 #endif
