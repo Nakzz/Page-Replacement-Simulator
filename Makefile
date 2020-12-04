@@ -1,9 +1,9 @@
 CC = gcc 
 CFLAGS = -Wall -pedantic -ggdb -Wextra
-OBJECTS = main.o util.o trace_parser.o process.o argparser.o linked_list.o simulator.o statistics.o pagetable.o diskqueue.o fifo.o
+OBJECTS = main.o util.o trace_parser.o process.o argparser.o linked_list.o simulator.o statistics.o pagetable.o diskqueue.o 
 
-temp_build: $(OBJECTS) 
-	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} -lm
+temp_build: $(OBJECTS) fifo.o
+	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} fifo.o -lm
 
 argparser.o: argparser.c argparser.h 
 	$(CC) $(CFLAGS) -c argparser.c 
@@ -42,14 +42,22 @@ new: clean
 	$(MAKE)
 
 537pfsim-fifo: $(OBJECTS) fifo.o
-	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} fifo.o -lm
+	$(CC) $(CFLAGS) -o 537pfsim-fifo ${OBJECTS} fifo.o -lm
 537pfsim-lru: $(OBJECTS) lru.o
-	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} lru.o -lm
+	$(CC) $(CFLAGS) -o 537pfsim-lru ${OBJECTS} lru.o -lm
 537pfsim-clock: $(OBJECTS) clock.o
-	$(CC) $(CFLAGS) -o temp_build ${OBJECTS} clock.o -lm
+	$(CC) $(CFLAGS) -o 537pfsim-clock ${OBJECTS} clock.o -lm
+
+lru.o: lru.c page_algorithm.h
+	$(CC) $(CFLAGS) -c lru.c
 
 fifo.o: fifo.c page_algorithm.h
 	$(CC) $(CFLAGS) -c fifo.c
+
+clock.o: clock.c page_algorithm.h
+	$(CC) $(CFLAGS) -c clock.c
+
+makeAll: 537pfsim-fifo 537pfsim-lru 537pfsim-clock
 
 test:
 	@printf "\n\n Test \n"

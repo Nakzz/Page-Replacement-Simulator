@@ -12,6 +12,18 @@
 
 #include "page_algorithm.h"
 
+
+Page *initPage(unsigned long memAddr, process *p)
+{
+    Page *page = malloc(sizeof(Page));
+    if (page == NULL)
+        errorReport("BAD MALLOC OR UNABLE TO MALLOC");
+    page->p = p;
+    page->memAddr = memAddr;
+
+    return page;
+}
+
 /**
  * Allocated memory for the Algorithm
  * 
@@ -73,10 +85,13 @@ process *pageReplacementAlgorithm(int evict, PageAlgoStruct *p, unsigned long me
     }
 
     Page *_p = (Page *)found->p;
-    process *proc = (process *)_p->p;
+    process *_proc = (process *)_p->p;
 
-    proc->memToRemove = _p->memAddr;
-    freeListNode(found);
-    free(_p);
-    return proc;
+    _proc->memToRemove = _p->memAddr;
+    if (evict)
+    {
+        freeListNode(found);
+        free(_p);
+    }
+    return _proc;
 }
